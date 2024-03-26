@@ -76,14 +76,10 @@
       "Properties": {
         "BucketName": "my-store-app-js-cc-angular",
         "PublicAccessBlockConfiguration": {
-          "BlockPublicAcls": false
-        },
-        "OwnershipControls": {
-          "Rules": [
-            {
-              "ObjectOwnership": "ObjectWriter"
-            }
-          ]
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
         },
         "WebsiteConfiguration": {
           "IndexDocument": "index.html",
@@ -105,16 +101,8 @@
               "Action": "s3:GetObject",
               "Resource": "arn:aws:s3:::my-store-app-js-cc-angular/*",
               "Principal": {
-                "AWS": {
-                  "Fn::Join": [
-                    " ",
-                    [
-                      "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity",
-                      {
-                        "Ref": "OriginAccessIdentity"
-                      }
-                    ]
-                  ]
+                "CanonicalUser": {
+                  "Fn::GetAtt": ["OriginAccessIdentity", "S3CanonicalUserId"]
                 }
               }
             }
@@ -142,7 +130,15 @@
               "Id": "myS3Origin",
               "S3OriginConfig": {
                 "OriginAccessIdentity": {
-                  "Fn::Sub": "origin-access-identity/cloudfront/${OriginAccessIdentity}"
+                  "Fn::Join": [
+                    "",
+                    [
+                      "origin-access-identity/cloudfront/",
+                      {
+                        "Ref": "OriginAccessIdentity"
+                      }
+                    ]
+                  ]
                 }
               }
             }
