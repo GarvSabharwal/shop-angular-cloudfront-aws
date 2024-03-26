@@ -4,8 +4,8 @@ frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: nodejs14.x
-  region: eu-west-1
+  runtime: nodejs20.x
+  region: ap-south-1
   # setup profile for AWS CLI.
   # profile: node-aws
 
@@ -20,7 +20,7 @@ plugins:
 custom:
   client:
     bucketName: my-store-app-js-cc-angular
-    distributionFolder: dist
+    distributionFolder: dist/app/browser
   s3BucketName: ${self:custom.client.bucketName}
 
   ## Serverless-single-page-app-plugin configuration:
@@ -37,10 +37,10 @@ resources:
       Properties:
         BucketName: ${self:custom.s3BucketName}
         PublicAccessBlockConfiguration:
-          BlockPublicAcls: false
-        OwnershipControls:
-          Rules:
-            - ObjectOwnership: ObjectWriter
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
         WebsiteConfiguration:
           IndexDocument: index.html
           ErrorDocument: index.html
@@ -60,11 +60,7 @@ resources:
               Action: s3:GetObject
               Resource: arn:aws:s3:::${self:custom.s3BucketName}/*
               Principal:
-                AWS:
-                  Fn::Join:
-                    - " "
-                    - - "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity"
-                      - !Ref OriginAccessIdentity
+                CanonicalUser: !GetAtt OriginAccessIdentity.S3CanonicalUserId
 
     OriginAccessIdentity:
       Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -83,7 +79,11 @@ resources:
               Id: myS3Origin
               ## In case you don't want to restrict the bucket access use CustomOriginConfig and remove S3OriginConfig
               S3OriginConfig:
-                OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
+                OriginAccessIdentity:
+                  Fn::Join:
+                    - ""
+                    - - "origin-access-identity/cloudfront/"
+                      - Ref: OriginAccessIdentity
               # CustomOriginConfig:
               #   HTTPPort: 80
               #   HTTPSPort: 443
